@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Hero Math</title>
+    <style>
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: auto;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+
+        #question-container {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            text-align: center;
+            font-size: 45px;
+            color: hsl(180, 23%, 3%);
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.7);
+        }
+
+        #answers-container {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .answer-button {
+            font-size: 24px;
+            margin: 0 15px;
+            padding: 10px 20px;
+            background-color: #f0f8ff;
+            border: 2px solid #0066cc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .answer-button:hover {
+            background-color: #b3d9ff;
+        }
+
+        .answer-button:focus {
+            outline: none;
+        }
+
+        #score-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: #0066cc;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            z-index: 1;
+        }
+
+        #penguin {
+            position: absolute;
+            bottom: 20px;
+            left: -150px;
+            width: 100px;
+            height: auto;
+            transition: left 2s linear;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="question-container"></div>
+        <div id="answers-container">
+            <button class="answer-button" id="answerA">A</button>
+            <button class="answer-button" id="answerB">B</button>
+            <button class="answer-button" id="answerC">C</button>
+            <button class="answer-button" id="answerD">D</button>
+        </div>
+        <div id="score-container">Score: <span id="score">0</span></div>
+        <img id="penguin" src="/images/pfp.png" alt="Penguin">
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctStreak = 0;
+        let difficultyLevel = 0;
+        let currentBackgroundIndex = 0;
+
+        const imageUrls = [
+            'https://pixabay.com/get/ga3f0f9a3017047117709238b22213f406d37cd11ad017223d0fd8241e5004feb293369d6adf19f5de3791653f6270e0ea0c87149953cfe7592ab90654c6717f0_1280.jpg',
+            'https://pixabay.com/get/g00e0f1dd74426117aafb7beb914c9d64a4fc325d9ddfa1edfe470030d28946c3e3ece5878062b64c380a510f86fd59e23ed162fcfc9b944df7f050fb6afc2d8e_1280.jpg',
+            'https://pixabay.com/get/g171ec8ac2f9d4491ebf258b7195cc3f61641ec219988da355d1e3f4506b4587505fd55137b5e7fc89563f1b41bbeeea3204a6dda8a9aaf15b698b672515fb26d_1280.jpg',
+            'https://pixabay.com/get/g4eb1f91750b74e0161839e6994a1e91bfe6e5ee127277e8c850941716fe8018fb693a4547ba2f47e2bb427b332f8ac31d90c5959c9d6a1dc57f20f00811369d0_1280.jpg',
+            'https://pixabay.com/get/g49066e7ad743b7f31a879c2f31ecc5b29e497fd81224fdbf36104c38260aab34c685c542682e2dd6d30bc99ab5a688671e774ddbea610454fcc2a0e9f8834568_1280.jpg',
+            'https://pixabay.com/get/gbd7bafffa9f1ef1636c86fc033011f749a6737056bc273af97fae55586e0df21787716f91661b45997334314214f68f461295be2986a5d0515566fd472ea6f1d_1280.png',
+            'https://pixabay.com/get/g13f6ae06e220d16b22ce1d64682106ae260fa542c4c3b84141553e8eb6e382ef6dd374e9725b8b5035b8f3813d6d0151c63518123f2a482204607716716c6320_1280.jpg',
+            'https://pixabay.com/get/g3dce415da54d0b370fd01a14328920e16e911870166718df770b86a9d88646f1e8ea5c4c43762c0fde3f43690e957f317c0d1bf5b9cf0df7ff0277e134d06b9d_1280.png',
+            'https://pixabay.com/get/g97b46d4b7124da1a90774c8236fffd18d53f7c7d0f4d3bb14ebbe4bb9d9695313eabe178585ec45582a2972f5be617ab9bccd2d854869e0bffe6e73ce0b7aae8_1280.jpg',
+            'https://pixabay.com/get/g72840e0f7e22fce71f2a21e64a25cc1587ad220df4beea1c41f46bafcedc3ee8fac0f7da259109ed437b1751c2b1ca57d3a51c93a3301f2e7044db91e98c3760_1280.jpg',
+            'https://pixabay.com/get/g9ec75782a3c8e47276dc3823a30573ad1ecd56d53cf3fd115f8ef09425dc3e025c52eb2819e9ceef7aceea8f621307574d0bccdd9b1217ee6ec5fac5fbd419c8_1280.jpg'
+            // Add more image URLs here
+        ];
+        function generateBackgrounds() {
+            const landscapeFolder = 'https://pixabay.com/illustrations/strawberry-rainbow-poster-drawing-8562596/';
+            return Array.from({length: 12}, (_, i) => `${landscapeFolder}/${i + 1}.jpg`);
+        }
+
+        function generateQuestions(count) {
+            const questions = [];
+            for (let i = 0; i < count; i++) {
+                questions.push(generateScenarioQuestion());
+            }
+            return questions;
+        }
+
+        function generateScenarioQuestion() {
+            const scenarios = [
+                { template: "Sarah has {x} apples. She gives {y} to her friend. How many apples does Sarah have left?", operation: "subtraction" },
+                { template: "Tom has {x} stickers. He buys {y} more. How many stickers does Tom have now?", operation: "addition" },
+                { template: "There are {x} students in a class. If they form groups of {y}, how many full groups can they make?", operation: "division" },
+                { template: "A bakery makes {x} rows of cookies with {y} cookies in each row. How many cookies are there in total?", operation: "multiplication" }
+            ];
+
+            const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+            let x, y, answer;
+
+            // Calculate difficulty factor (0 to 1)
+            const difficultyFactor = Math.min(difficultyLevel / 55, 10);
+
+            switch (scenario.operation) {
+                case "subtraction":
+                    x = Math.floor(Math.random() * (50 + 150 * difficultyFactor)) + 10;
+                    y = Math.floor(Math.random() * x);
+                    answer = x - y;
+                    break;
+                case "addition":
+                    x = Math.floor(Math.random() * (50 + 450 * difficultyFactor)) + 1;
+                    y = Math.floor(Math.random() * (50 + 450 * difficultyFactor)) + 1;
+                    answer = x + y;
+                    break;
+                case "division":
+                    y = Math.floor(Math.random() * (5 + 15 * difficultyFactor)) + 2;
+                    answer = Math.floor(Math.random() * (10 + 90 * difficultyFactor)) + 1;
+                    x = y * answer;
+                    break;
+                case "multiplication":
+                    x = Math.floor(Math.random() * (10 + 90 * difficultyFactor)) + 1;
+                    y = Math.floor(Math.random() * (10 + 90 * difficultyFactor)) + 1;
+                    answer = x * y;
+                    break;
+            }
+
+            const question = scenario.template.replace("{x}", x).replace("{y}", y);
+            const wrongAnswers = generateWrongAnswers(answer, scenario.operation, difficultyFactor);
+
+            return {
+                text: question,
+                answers: shuffleArray([answer.toString(), ...wrongAnswers]),
+                correctAnswer: answer.toString()
+            };
+        }
+
+        function generateWrongAnswers(correctAnswer, operation, difficultyFactor) {
+            const wrongAnswers = [];
+            while (wrongAnswers.length < 3) {
+                let wrongAnswer;
+                switch (operation) {
+                    case "subtraction":
+                    case "addition":
+                        wrongAnswer = correctAnswer + (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * (5 + 15 * difficultyFactor)) + 1);
+                        break;
+                    case "division":
+                    case "multiplication":
+                        wrongAnswer = correctAnswer + (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * (3 + 7 * difficultyFactor)) + 1);
+                        break;
+                }
+                if (!wrongAnswers.includes(wrongAnswer.toString()) && wrongAnswer !== correctAnswer && wrongAnswer > 0) {
+                    wrongAnswers.push(wrongAnswer.toString());
+                }
+            }
+            return wrongAnswers;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function displayQuestion() {
+            const question = questions[currentQuestionIndex];
+            document.getElementById('question-container').innerText = question.text;
+            document.getElementById('answerA').innerText = question.answers[0];
+            document.getElementById('answerB').innerText = question.answers[1];
+            document.getElementById('answerC').innerText = question.answers[2];
+            document.getElementById('answerD').innerText = question.answers[3];
+        }
+
+        function checkAnswer(selectedAnswer) {
+            const question = questions[currentQuestionIndex];
+            if (selectedAnswer === question.correctAnswer) {
+                score += 10;
+                correctStreak++;
+                if (correctStreak === 5) {
+                    difficultyLevel++;
+                    correctStreak = 0;
+                }
+                updateScore();
+                movePenguin();
+                
+                // Remove focus from the clicked button
+                document.activeElement.blur();
+            } else {
+                alert('Wrong answer. Try again!');
+                correctStreak = 0;
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').innerText = score;
+        }
+
+        function movePenguin() {
+            const penguin = document.getElementById('penguin');
+            penguin.style.left = '900px';
+            setTimeout(() => {
+                changeBackground();
+                penguin.style.left = '-150px';
+            }, 2000);
+        }
+
+        function changeBackground() {
+            currentBackgroundIndex = (currentBackgroundIndex + 1) % imageUrls.length;
+            document.getElementById('game-container').style.backgroundImage = `url('${imageUrls[currentBackgroundIndex]}')`;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            } else {
+                alert(`Congratulations! You have completed all questions! Your final score is ${score}.`);
+            }
+        }
+
+        // Initialize the game
+        backgrounds = generateBackgrounds();
+        questions = generateQuestions(250);
+        
+        // Set the initial background
+        document.getElementById('game-container').style.backgroundImage = `url('${imageUrls[0]}')`;
+        
+        // Display the first question
+        displayQuestion();
+        updateScore();
+
+        // Event listeners for answer buttons
+        document.getElementById('answerA').addEventListener('click', function() { checkAnswer(this.innerText); });
+        document.getElementById('answerB').addEventListener('click', function() { checkAnswer(this.innerText); });
+        document.getElementById('answerC').addEventListener('click', function() { checkAnswer(this.innerText); });
+        document.getElementById('answerD').addEventListener('click', function() { checkAnswer(this.innerText); });
+    });
+    </script>
+</body>
+</html>
